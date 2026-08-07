@@ -59,12 +59,12 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:${{ github.sha }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:latest
 
       - name: Trivy Docker Image Scan for Vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:${{ github.sha }}
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:latest
           format: 'table'
           severity: 'CRITICAL,HIGH'
         env:
