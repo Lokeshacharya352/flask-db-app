@@ -38,7 +38,7 @@ jobs:
         with:
           projectBaseDir: .
           args: >
-            -Dsonar.projectKey=flask-auth-devops
+            -Dsonar.projectKey=Flask-Db-Auth-App
             -Dsonar.sources=.
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
