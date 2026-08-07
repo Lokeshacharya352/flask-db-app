@@ -14,6 +14,11 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -21,11 +26,24 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
+      
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --region us-east-2 --name flask-eks-cluster
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Test Kubernetes Connection
+        run: kubectl get nodes
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2
         with:
-          python-version: '3.12'
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=flask-auth-devops
+            -Dsonar.sources=.
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -42,3 +60,19 @@ jobs:
           context: .
           push: true
           tags: lucky352/flask-db-auth-app:latest
+
+      - name: Trivy Scan - Docker Image
+        uses: aquasecurity/trivy-action@0.13.0
+        with:
+          image-ref: lucky352/flask-db-auth-app:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+     
+      - name: Deploy to EKS
+        run: |
+          kubectl create namespace flask --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f k8s/ -n flask
+          kubectl rollout status deployment/flask-app -n flask
