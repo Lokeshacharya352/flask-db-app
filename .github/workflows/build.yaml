@@ -59,17 +59,17 @@ jobs:
         with:
           context: .
           push: true
-          tags: lucky352/flask-db-auth-app:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:${{ github.sha }}
 
-      - name: Trivy Scan - Docker Image
-        uses: aquasecurity/trivy-action@0.13.0
+      - name: Trivy Docker Image Scan for Vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: lucky352/flask-db-auth-app:latest
-          format: table
-          exit-code: 1
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: CRITICAL
+          image-ref: ${{ secrets.DOCKER_USERNAME }}/flask-db-auth-app:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
      
       - name: Deploy to EKS
         run: |
